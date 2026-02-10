@@ -1,115 +1,175 @@
-import { Image } from 'expo-image';
-import { FlatList, Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { FlatList, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Product, useCart } from './cart-context';
+import { ProductCard } from '@/components/ui/product-card';
+import { CategoryCard } from '@/components/ui/category-card';
+import { CATEGORIES, Category } from '@/app/data/categories';
+import {
+  getFeaturedProducts,
+  getTrendingProducts,
+  getSaleProducts,
+} from '@/app/data/products';
+import { useCart } from '@/app/context/cart-context';
+import { PRIMARY, SECONDARY, WHITE } from '@/constants/colors';
 
-const PRODUCTS: Product[] = [
+const BANNERS = [
   {
     id: '1',
-    name: 'Classic T‑Shirt',
-    price: 19.99,
-    image: 'https://images.pexels.com/photos/10026491/pexels-photo-10026491.jpeg',
-    description: 'Soft cotton t‑shirt, perfect for everyday wear.',
+    title: 'Winter Sale',
+    subtitle: 'Up to 50% off',
+    gradient: ['#6366F1', '#8B5CF6'],
   },
   {
     id: '2',
-    name: 'Running Shoes',
-    price: 59.99,
-    image: 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg',
-    description: 'Lightweight shoes designed for comfort and speed.',
+    title: 'New Arrivals',
+    subtitle: 'Discover fresh styles',
+    gradient: ['#F59E0B', '#EF4444'],
   },
   {
     id: '3',
-    name: 'Backpack',
-    price: 39.99,
-    image: 'https://images.pexels.com/photos/1433052/pexels-photo-1433052.jpeg',
-    description: 'Durable backpack with multiple compartments.',
-  },
-  {
-    id: '4',
-    name: 'Noise Cancelling Headphones',
-    price: 129.99,
-    image: 'https://images.pexels.com/photos/374870/pexels-photo-374870.jpeg',
-    description: 'Immersive sound with all‑day comfort.',
-  },
-  {
-    id: '5',
-    name: 'Smart Watch',
-    price: 199.99,
-    image: 'https://images.pexels.com/photos/2774062/pexels-photo-2774062.jpeg',
-    description: 'Track your health and stay connected.',
+    title: 'Free Shipping',
+    subtitle: 'On orders over $50',
+    gradient: ['#10B981', '#059669'],
   },
 ];
 
 export default function HomeScreen() {
-  const { addToCart, totalItems } = useCart();
+  const { totalItems } = useCart();
+  const [activeBanner, setActiveBanner] = useState(0);
 
-  function handleAdd(product: Product) {
-    addToCart(product);
-  }
+  const featuredProducts = getFeaturedProducts();
+  const trendingProducts = getTrendingProducts();
+  const saleProducts = getSaleProducts();
+
+  const renderBannerItem = ({ item }: { item: typeof BANNERS[0] }) => (
+    <View style={[styles.banner, { backgroundColor: item.gradient[0] }]}>
+      <ThemedText type="title" style={styles.bannerTitle}>
+        {item.title}
+      </ThemedText>
+      <ThemedText style={styles.bannerSubtitle}>{item.subtitle}</ThemedText>
+    </View>
+  );
+
+  const renderCategoryItem = ({ item }: { item: Category }) => (
+    <View style={styles.categoryWrapper}>
+      <CategoryCard category={item} variant="horizontal" />
+    </View>
+  );
+
+  const renderSectionHeader = (title: string, showViewAll = false) => (
+    <View style={styles.sectionHeader}>
+      <ThemedText type="title">{title}</ThemedText>
+      {showViewAll && (
+        <Pressable>
+          <ThemedText style={styles.viewAll}>View All →</ThemedText>
+        </Pressable>
+      )}
+    </View>
+  );
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={styles.topBar}>
+      <View style={styles.header}>
         <View>
-          <ThemedText type="title">Discover</ThemedText>
-          <ThemedText>Premium essentials, curated for you.</ThemedText>
+          <ThemedText type="title" style={styles.greeting}>
+            Discover
+          </ThemedText>
+          <ThemedText style={styles.subtitle}>Premium essentials, curated for you.</ThemedText>
         </View>
-        <ThemedView style={styles.cartBadge}>
-          <ThemedText type="defaultSemiBold">{totalItems}</ThemedText>
-          <ThemedText style={styles.cartBadgeLabel}>Cart</ThemedText>
-        </ThemedView>
-      </ThemedView>
+        <Pressable style={styles.cartButton}>
+          <ThemedText style={styles.cartIcon}>🛒</ThemedText>
+          {totalItems > 0 && (
+            <View style={styles.cartBadge}>
+              <ThemedText style={styles.cartBadgeText}>{totalItems}</ThemedText>
+            </View>
+          )}
+        </Pressable>
+      </View>
 
-      <ThemedView style={styles.searchContainer}>
+      <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search for products"
+          placeholder="Search products..."
           placeholderTextColor="#A0A0A0"
         />
-      </ThemedView>
-
-      <ThemedView style={styles.banner}>
-        <ThemedText type="defaultSemiBold" style={styles.bannerTitle}>
-          Winter Sale
-        </ThemedText>
-        <ThemedText style={styles.bannerSubtitle}>Up to 40% off selected items</ThemedText>
-      </ThemedView>
+        <ThemedText style={styles.searchIcon}>🔍</ThemedText>
+      </View>
 
       <FlatList
-        data={PRODUCTS}
+        data={BANNERS}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        renderItem={renderBannerItem}
         keyExtractor={(item) => item.id}
-        numColumns={2}
-        columnWrapperStyle={styles.gridRow}
-        contentContainerStyle={styles.listContent}
+        onMomentumScrollEnd={(e) => {
+          const newIndex = Math.round(e.nativeEvent.contentOffset.x / (styles.banner.width as number));
+          setActiveBanner(newIndex);
+        }}
+        contentContainerStyle={styles.bannerList}
+      />
+
+      <View style={styles.pagination}>
+        {BANNERS.map((_, index) => (
+          <View
+            key={index}
+            style={[styles.paginationDot, index === activeBanner && styles.paginationDotActive]}
+          />
+        ))}
+      </View>
+
+      <FlatList
+        horizontal
+        data={CATEGORIES}
+        renderItem={renderCategoryItem}
+        keyExtractor={(item) => item.id}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.categoryList}
+      />
+
+      <FlatList
+        data={featuredProducts}
+        horizontal
+        showsHorizontalScrollIndicator={false}
         renderItem={({ item }) => (
-          <ThemedView style={styles.card}>
-            <Image source={{ uri: item.image }} style={styles.productImage} contentFit="cover" />
-            <View style={styles.cardBody}>
-              <ThemedText numberOfLines={1} type="defaultSemiBold">
-                {item.name}
-              </ThemedText>
-              <ThemedText numberOfLines={2} style={styles.description}>
-                {item.description}
-              </ThemedText>
-              <View style={styles.priceRow}>
-                <ThemedText type="defaultSemiBold">${item.price.toFixed(2)}</ThemedText>
-                <TouchableOpacity style={styles.addButton} onPress={() => handleAdd(item)}>
-                  <ThemedText type="defaultSemiBold" style={styles.addButtonText}>
-                    +
-                  </ThemedText>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </ThemedView>
+          <View style={styles.productWrapper}>
+            <ProductCard product={item} />
+          </View>
         )}
-        ListEmptyComponent={
-          <ThemedView style={styles.emptyState}>
-            <ThemedText>No products available.</ThemedText>
-          </ThemedView>
-        }
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.productList}
+        ListHeaderComponent={renderSectionHeader('Featured', true)}
+      />
+
+      <FlatList
+        data={trendingProducts}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <View style={styles.productWrapper}>
+            <ProductCard product={item} />
+          </View>
+        )}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.productList}
+        ListHeaderComponent={renderSectionHeader('Trending Now', true)}
+      />
+
+      <FlatList
+        data={saleProducts}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <View style={styles.productWrapper}>
+            <ProductCard product={item} />
+          </View>
+        )}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.productList}
+        ListHeaderComponent={renderSectionHeader('On Sale', true)}
+        ListFooterComponent={<View style={{ height: 100 }} />}
       />
     </ThemedView>
   );
@@ -120,92 +180,122 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: Platform.OS === 'ios' ? 70 : 52,
     paddingHorizontal: 16,
-    paddingVertical: 12,
   },
-  topBar: {
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  greeting: {
+    fontSize: 28,
+    fontWeight: '700',
+  },
+  subtitle: {
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  cartButton: {
+    position: 'relative',
+    padding: 8,
+  },
+  cartIcon: {
+    fontSize: 24,
   },
   cartBadge: {
-    minWidth: 56,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 20,
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: SECONDARY,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
     alignItems: 'center',
-    gap: 2,
+    justifyContent: 'center',
   },
-  cartBadgeLabel: {
+  cartBadgeText: {
+    color: WHITE,
     fontSize: 10,
+    fontWeight: '700',
   },
   searchContainer: {
-    marginBottom: 12,
+    marginBottom: 16,
+    position: 'relative',
   },
   searchInput: {
     backgroundColor: '#1E1E1E',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 999,
+    paddingVertical: 12,
+    paddingHorizontal: 44,
+    borderRadius: 12,
     fontSize: 14,
+    color: '#FFFFFF',
+  },
+  searchIcon: {
+    position: 'absolute',
+    left: 14,
+    top: '50%',
+    transform: [{ translateY: -10 }],
+    fontSize: 16,
+  },
+  bannerList: {
+    marginBottom: 8,
   },
   banner: {
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    width: 320,
+    height: 140,
+    borderRadius: 16,
+    justifyContent: 'center',
+    padding: 20,
+    marginRight: 12,
   },
   bannerTitle: {
-    fontSize: 16,
+    fontSize: 24,
+    color: WHITE,
     marginBottom: 4,
   },
   bannerSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
+    color: WHITE,
+    opacity: 0.9,
   },
-  listContent: {
-    paddingBottom: 16,
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 16,
+    gap: 6,
   },
-  gridRow: {
-    justifyContent: 'space-between',
-    marginBottom: 12,
+  paginationDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#3A3A3A',
   },
-  card: {
-    flex: 1,
-    marginHorizontal: 4,
-    borderRadius: 12,
-    overflow: 'hidden',
+  paginationDotActive: {
+    backgroundColor: PRIMARY,
+    width: 18,
   },
-  productImage: {
-    width: '100%',
-    aspectRatio: 4 / 5,
+  categoryList: {
+    marginBottom: 16,
   },
-  cardBody: {
-    padding: 8,
-    gap: 4,
+  categoryWrapper: {
+    marginRight: 8,
   },
-  description: {
-    fontSize: 12,
-  },
-  priceRow: {
-    marginTop: 4,
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 12,
+    marginRight: 16,
   },
-  addButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+  viewAll: {
+    color: PRIMARY,
+    fontSize: 13,
   },
-  addButtonText: {
-    fontSize: 18,
+  productList: {
+    marginBottom: 16,
   },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 32,
+  productWrapper: {
+    width: 170,
+    marginRight: 8,
   },
 });
