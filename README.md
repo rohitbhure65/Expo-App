@@ -1,13 +1,16 @@
+```
 npx create-expo-app@latest
+```
 
 1. Install Nativewind
 You will need to install nativewind and its peer dependencies tailwindcss, react-native-reanimated and react-native-safe-area-context.
-
-npx expo install nativewind react-native-reanimated react-native-safe-area-context
-npx expo install --dev tailwindcss@^3.4.17 prettier-plugin-tailwindcss@^0.5.11 babel-pres
+```
+npm install nativewind react-native-reanimated react-native-safe-area-context
+npm install --dev tailwindcss@^3.4.17 prettier-plugin-tailwindcss@^0.5.11 babel-preset-expo
+```
 
 2. Setup Tailwind CSS
-```Run npx tailwindcss``` init to create a tailwind.config.js file
+```Run npx tailwindcss init``` to create a tailwind.config.js file
 
 Add the paths to all of your component files in your tailwind.config.js file.
 ```
