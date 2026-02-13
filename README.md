@@ -2,6 +2,11 @@
 npx create-expo-app@latest
 ```
 
+reset project 
+```
+npm run reset-project
+```
+
 1. Install Nativewind
 You will need to install nativewind and its peer dependencies tailwindcss, react-native-reanimated and react-native-safe-area-context.
 ```
